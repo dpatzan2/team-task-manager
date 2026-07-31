@@ -94,6 +94,78 @@ a {
   color: var(--accent);
 }
 
+button.secondary {
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+.muted {
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.task-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.task-form .row {
+  justify-content: flex-start;
+}
+
+.task-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.task-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.task-list li.done .task-body strong {
+  color: var(--muted);
+  text-decoration: line-through;
+}
+
+.task-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.badge {
+  padding: 2px 8px;
+  font-size: 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+}
+
+.badge.high {
+  color: #a5321a;
+  background: #fff0e6;
+  border-color: #ffc9a8;
+}
+
+.badge.low {
+  color: #2b6b3f;
+  background: #eefaf1;
+  border-color: #b6e3c3;
+}
+
 .error {
   padding: 8px 10px;
   font-size: 14px;
