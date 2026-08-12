@@ -1,8 +1,12 @@
 # Project & Team Task Manager
 
-Aplicación colaborativa de organizaciones, proyectos y tareas. Stack: Django + DRF, JWT, React + Vite y SQLite.
+A collaborative organization, project, and task management application built with Django REST Framework and React.
 
-## Ejecutar
+**Stack:** Django, Django REST Framework, SimpleJWT, React, Vite, and SQLite.
+
+## Run locally
+
+### Backend
 
 ```bash
 cd backend
@@ -13,7 +17,7 @@ python3 -m venv .venv
 .venv/bin/python manage.py runserver
 ```
 
-En otra terminal:
+### Frontend
 
 ```bash
 cd frontend
@@ -21,51 +25,59 @@ npm install
 npm run dev
 ```
 
-Variables opcionales en `backend/.env.example`: `DJANGO_SECRET_KEY`, `DJANGO_DEBUG`, `DJANGO_ALLOWED_HOSTS`.
+Optional environment variables are documented in `backend/.env.example`:
+`DJANGO_SECRET_KEY`, `DJANGO_DEBUG`, and `DJANGO_ALLOWED_HOSTS`.
 
-## Modelo y permisos
+## Data model and roles
 
-`Organization 1—N Project 1—N Task`; `Membership` relaciona usuarios y organizaciones, con una restricción única por usuario/organización. Cada tarea tiene `created_by`, asignado opcional, estado, prioridad y fecha límite.
+`Organization 1-N Project 1-N Task`. `Membership` joins users to organizations and has a unique `(user, organization)` constraint. A task has a creator, optional assignee, status, priority, due date, timestamps, soft deletion, and activity entries.
 
-| Rol | Proyectos y miembros | Tareas |
+| Role | Projects and members | Tasks |
 | --- | --- | --- |
-| OWNER | Crear, editar y eliminar; administración completa | Todas |
-| ADMIN | Crear y editar; no modifica ni elimina owners | Todas |
-| MEMBER | Solo lectura | Crea y edita sus propias tareas |
-| VIEWER | Solo lectura | Solo lectura |
+| OWNER | Full organization, project, and member administration | Can manage every task |
+| ADMIN | Can manage projects and non-owner memberships | Can manage every task |
+| MEMBER | Read-only | Can create and manage only tasks they created |
+| VIEWER | Read-only | Read-only |
 
-Las consultas se filtran por membresía: recursos fuera de una organización del usuario devuelven 404. Un creador de tarea o ADMIN/OWNER puede reasignarla; el nuevo asignado debe ser miembro de la organización. Las tareas no se mueven entre proyectos para evitar un cambio de organización no autorizado.
+All resource querysets are membership-scoped, so resources outside a user's organizations return 404. A task creator or an ADMIN/OWNER can reassign a task, but the assignee must belong to the organization. Tasks cannot be moved between projects.
 
 ## API
 
-- `POST /api/auth/register/`, `login/`, `refresh/`
-- CRUD: `/api/organizations/`, `/api/memberships/`, `/api/projects/`, `/api/tasks/`
-- Proyectos: `?organization=<id>`; membresías: `?organization=<id>`.
-- Tareas: `?project=<id>&status=TODO&priority=HIGH&assignee=<id>&search=texto&page=2`.
+- Authentication: `POST /api/auth/register/`, `login/`, and `refresh/`.
+- CRUD: `/api/organizations/`, `/api/memberships/`, `/api/projects/`, and `/api/tasks/`.
+- User search for membership: `GET /api/memberships/users/?q=name`.
+- Project summary: `GET /api/projects/<id>/summary/`.
+- Task activity: `GET /api/tasks/<id>/activity/`.
+- Deleted tasks and restore: `GET /api/tasks/deleted/`, `POST /api/tasks/<id>/restore/`.
+- Task filters: `?project=<id>&status=TODO&priority=HIGH&assignee=<id>&search=text&page=2`.
 
-Las listas de proyectos y tareas usan paginación DRF. Las tareas cargan proyecto, organización, creador y asignado con `select_related` para evitar N+1. Registro/login están limitados a 10 solicitudes por minuto.
+Projects and tasks use DRF pagination. Task list queries use `select_related` for project, organization, creator, and assignee. Login and registration are rate-limited to 10 requests per minute.
 
-## Decisiones y trade-offs
+## Technical decisions and trade-offs
 
-JWT mantiene el backend sin consulta a base de datos por cada token; se almacena el access token en `localStorage` para simplificar el alcance. En producción preferiría refresh token httpOnly y CSRF. Los ViewSets concentran el CRUD y los querysets restringidos; `require_role` concentra la autorización de escritura. El frontend separa `pages`, cliente HTTP y componentes simples, sin librería UI.
+JWT was chosen because signed access tokens avoid a database lookup on every authenticated request. The frontend stores access and refresh tokens in `localStorage` and retries one failed request after refreshing the access token. For production, I would use an httpOnly refresh cookie, an in-memory access token, and CSRF protection to reduce XSS exposure.
 
-Se usa paginación de servidor y filtros por query params: evita cargar miles de tareas, a cambio de más peticiones. La UI confirma eliminaciones, pero no usa actualización optimista ni refresh automático de JWT.
+ModelViewSets keep CRUD and membership-scoped querysets in one place. `require_role` centralizes write authorization, while serializers enforce cross-resource validations such as requiring task assignees to be organization members.
 
-## Preguntas de diseño
+The frontend separates pages, the HTTP client, and small UI pieces without adding a component library. Server-side pagination and query-string filters prevent large task lists from being loaded at once. The task status update is optimistic and rolls back if the request fails.
 
-1. Usaría `select_related('assignee', 'project')`; ya se aplica, y `prefetch_related` solo para relaciones de colección.
-2. Cambiaría a paginación cursor, índices por organización/estado/fecha, búsqueda de texto y una lista virtualizada en React.
-3. Se valida en el serializer porque conoce el proyecto y el payload completo, devuelve un 400 útil y protege toda entrada API; una restricción de base de datos no puede expresar esta relación transversal fácilmente.
-4. Dos ediciones pueden sobrescribirse. Añadiría `updated_at` como versión y rechazaría un PATCH con versión antigua (409), mostrando recarga al usuario.
-5. Primero añadiría un servicio/evento al cambio de estado y un consumidor WebSocket; dejaría fuera presencia, historial completo y garantías de entrega en la primera entrega.
+Soft deletion preserves tasks for recovery, and `TaskActivity` records create, update, delete, and restore actions. The activity log is intentionally simple; it does not store a complete field-by-field diff.
 
-## Con más tiempo
+## Design questions
 
-1. Refresh JWT con cookie httpOnly y CSRF.
-2. Selector de usuarios por búsqueda en vez de pedir ID al agregar un miembro.
-3. Auditoría de cambios y restauración/soft delete.
-4. Pruebas de interfaz y actualización optimista de estado.
+1. `select_related('assignee', 'project')` prevents N+1 queries for ForeignKey relations; `prefetch_related` is appropriate for collections.
+2. For tens of thousands of tasks, I would use cursor pagination, indexes for organization/project/status/date, full-text search, and a virtualized frontend list.
+3. The serializer validates assignees because it sees the project and payload together, can return a useful 400 response, and protects all API writes. A database constraint cannot easily express this cross-table rule.
+4. Two users can overwrite each other's changes. A practical next step is optimistic concurrency: send `updated_at` as a version and return 409 when it is stale.
+5. For real-time notifications, I would first publish task-change events and add a WebSocket consumer. Presence, a full notification history, and delivery guarantees would remain out of scope initially.
 
-## Dificultades reales
+## Improvements with more time
 
-La migración desde tareas personales conserva datos: crea un espacio y proyecto importado por usuario. El punto más delicado fue la autorización transversal: filtrar querysets impide fugas de lectura y las validaciones de rol/organización bloquean cambios de proyecto, roles de owner y asignaciones externas.
+1. Store refresh tokens in httpOnly cookies and add CSRF protection.
+2. Add frontend tests for role-specific flows, task editing, and refresh behavior.
+3. Add audit retention policies and field-level change diffs.
+4. Move from SQLite to PostgreSQL and add production monitoring.
+
+## Difficulties
+
+The migration from a personal task manager preserves existing data by creating an imported workspace and project per user. The hardest part was preventing cross-organization access: membership-scoped querysets protect list and detail endpoints, while role and serializer validation protect writes.
