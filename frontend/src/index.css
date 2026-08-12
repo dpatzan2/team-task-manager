@@ -1,10 +1,11 @@
 :root {
   --text: #1f2933;
   --muted: #6b7280;
-  --bg: #f5f6f8;
+  --bg: #f3f6fb;
   --surface: #fff;
   --border: #d9dde3;
-  --accent: #3b5bdb;
+  --accent: #3157c8;
+  --accent-soft: #eef3ff;
   --danger: #c92a2a;
 
   font: 16px/1.5 system-ui, "Segoe UI", Roboto, sans-serif;
@@ -17,24 +18,25 @@ body {
 }
 
 #root {
-  max-width: 720px;
+  max-width: 880px;
   margin: 0 auto;
   padding: 32px 16px;
 }
 
 h1 {
-  font-size: 24px;
+  font-size: 28px;
   margin: 0 0 16px;
 }
 
 .card {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 24px;
+  gap: 20px;
+  padding: clamp(20px, 4vw, 32px);
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 14px;
+  box-shadow: 0 12px 32px rgba(31, 41, 51, 0.06);
 }
 
 .row {
@@ -64,8 +66,11 @@ textarea {
   color: var(--text);
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 8px;
+  transition: border-color 150ms, box-shadow 150ms;
 }
+
+input:focus, select:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); outline: none; }
 
 input:focus-visible,
 select:focus-visible,
@@ -81,9 +86,13 @@ button {
   color: #fff;
   background: var(--accent);
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
+  transition: background 150ms, transform 150ms;
 }
+
+button:not(:disabled):hover { background: #2748a8; }
+button:not(:disabled):active { transform: translateY(1px); }
 
 button:disabled {
   opacity: 0.6;
@@ -100,6 +109,8 @@ button.secondary {
   border: 1px solid var(--border);
 }
 
+button.secondary:hover { background: var(--accent-soft); }
+
 .muted {
   font-size: 14px;
   color: var(--muted);
@@ -112,7 +123,8 @@ button.secondary {
   padding: 16px;
   background: var(--bg);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 10px;
+  gap: 12px;
 }
 
 .task-form .row {
@@ -134,8 +146,12 @@ button.secondary {
   gap: 8px;
   padding: 10px 12px;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 10px;
+  background: #fff;
+  transition: border-color 150ms, box-shadow 150ms;
 }
+
+.task-list li:hover { border-color: #b6c7ef; box-shadow: 0 3px 10px rgba(31, 41, 51, 0.05); }
 
 .task-list li.done .task-body strong {
   color: var(--muted);
@@ -152,6 +168,9 @@ button.secondary {
   font-size: 12px;
   border: 1px solid var(--border);
   border-radius: 999px;
+  background: var(--accent-soft);
+  border-color: #cbd7fa;
+  color: #2748a8;
 }
 
 .badge.high {
@@ -174,4 +193,15 @@ button.secondary {
   border: 1px solid #ffc9c9;
   border-radius: 6px;
   white-space: pre-line;
+}
+
+details { padding: 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg); }
+summary { cursor: pointer; color: var(--accent); font-weight: 600; }
+details[open] summary { margin-bottom: 12px; }
+
+@media (max-width: 600px) {
+  #root { padding: 16px 12px; }
+  .row, .task-list li { align-items: stretch; flex-wrap: wrap; }
+  .row > * { flex: 1 1 auto; }
+  .task-list li > button, .task-list li > select { width: 100%; }
 }
