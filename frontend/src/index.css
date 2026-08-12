@@ -28,6 +28,11 @@ h1 {
   margin: 0 0 16px;
 }
 
+h2 { font-size: 18px; margin: 0; }
+small { display: block; margin-top: 2px; color: var(--muted); }
+section { display: grid; gap: 12px; }
+.section-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+
 .card {
   display: flex;
   flex-direction: column;
@@ -139,6 +144,15 @@ button.secondary:hover { background: var(--accent-soft); }
   padding: 0;
   list-style: none;
 }
+
+.resource-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin: 0; padding: 0; list-style: none; }
+.resource-list li { border: 1px solid var(--border); border-radius: 10px; background: #fff; transition: border-color 150ms, box-shadow 150ms, transform 150ms; }
+.resource-list li:hover { border-color: #b6c7ef; box-shadow: 0 6px 16px rgba(31, 41, 51, .07); transform: translateY(-1px); }
+.resource-list a { display: flex; align-items: center; gap: 12px; padding: 14px; color: var(--text); text-decoration: none; }
+.resource-list a > span:nth-child(2) { flex: 1; min-width: 0; }
+.resource-icon { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 9px; color: #2748a8; background: var(--accent-soft); font-weight: 700; }
+.project-icon { color: #2f7d50; background: #edf8f0; }
+.empty-state { padding: 18px; text-align: center; border: 1px dashed var(--border); border-radius: 10px; }
 
 .task-list li {
   display: flex;
