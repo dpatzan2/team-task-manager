@@ -220,6 +220,9 @@ button.secondary:hover { background: var(--accent-soft); }
 details { padding: 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg); }
 summary { cursor: pointer; color: var(--accent); font-weight: 600; }
 details[open] summary { margin-bottom: 12px; }
+.task-details { margin-top: 6px; padding: 0; border: 0; background: transparent; }
+.task-details summary { font-size: 13px; font-weight: 500; }
+.task-details p { margin: 8px 0; font-size: 14px; }
 
 @media (max-width: 780px) {
   #root { padding: 16px 12px; }
