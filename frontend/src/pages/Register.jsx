@@ -21,11 +21,11 @@ export default function Register() {
         body: { username, email, password },
       });
       // Registration does not return tokens, so log in right after it.
-      const { access } = await api("/auth/login/", {
+      const { access, refresh } = await api("/auth/login/", {
         method: "POST",
         body: { username, password },
       });
-      setToken(access);
+      setToken(access, refresh);
       navigate("/");
     } catch (err) {
       setError(err.message);

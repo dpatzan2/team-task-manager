@@ -15,11 +15,11 @@ export default function Login() {
     setError("");
     setLoading(true);
     try {
-      const { access } = await api("/auth/login/", {
+      const { access, refresh } = await api("/auth/login/", {
         method: "POST",
         body: { username, password },
       });
-      setToken(access);
+      setToken(access, refresh);
       navigate("/");
     } catch (err) {
       setError(err.message);

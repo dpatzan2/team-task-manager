@@ -1,10 +1,11 @@
 from django.contrib.auth import get_user_model
 from django.db.models import Count, Q
+from django.utils import timezone
 from rest_framework import exceptions, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from .models import Membership, Organization, Project, Task
+from .models import Membership, Organization, Project, Task, TaskActivity
 from .serializers import MembershipSerializer, OrganizationSerializer, ProjectSerializer, TaskSerializer
 
 
@@ -109,7 +110,7 @@ class TaskViewSet(viewsets.ModelViewSet):
     serializer_class = TaskSerializer
 
     def get_queryset(self):
-        queryset = Task.objects.filter(project__organization__memberships__user=self.request.user).select_related("project", "project__organization", "created_by", "assignee").distinct()
+        queryset = Task.objects.filter(deleted_at__isnull=True, project__organization__memberships__user=self.request.user).select_related("project", "project__organization", "created_by", "assignee").distinct()
         for field in ("project", "status", "priority", "assignee"):
             if value := self.request.query_params.get(field):
                 queryset = queryset.filter(**{f"{field}_id" if field in ("project", "assignee") else field: value})
@@ -119,7 +120,8 @@ class TaskViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         require_role(self.request.user, serializer.validated_data["project"].organization, "OWNER", "ADMIN", "MEMBER")
-        serializer.save(created_by=self.request.user)
+        task = serializer.save(created_by=self.request.user)
+        TaskActivity.objects.create(task=task, actor=self.request.user, action="CREATED")
 
     def perform_update(self, serializer):
         task = serializer.instance
@@ -128,10 +130,13 @@ class TaskViewSet(viewsets.ModelViewSet):
             raise exceptions.PermissionDenied()
         if serializer.validated_data.get("project", task.project) != task.project:
             raise exceptions.PermissionDenied("Tasks cannot be moved between projects.")
-        serializer.save()
+        task = serializer.save()
+        TaskActivity.objects.create(task=task, actor=self.request.user, action="UPDATED")
 
     def perform_destroy(self, instance):
         member = require_role(self.request.user, instance.project.organization, "OWNER", "ADMIN", "MEMBER")
         if member.role == "MEMBER" and instance.created_by_id != self.request.user.id:
             raise exceptions.PermissionDenied()
-        instance.delete()
+        instance.deleted_at = timezone.now()
+        instance.save(update_fields=["deleted_at"])
+        TaskActivity.objects.create(task=instance, actor=self.request.user, action="DELETED")
