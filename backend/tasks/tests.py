@@ -63,3 +63,23 @@ class CollaborativeAPITests(APITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["count"], 12)
         self.assertEqual(len(response.data["results"]), 2)
+
+    def test_member_cannot_move_task_to_a_project_in_another_organization(self):
+        other = Organization.objects.create(name="Other", slug="other")
+        other_project = Project.objects.create(organization=other, name="Secret")
+        self.client.force_authenticate(self.member)
+        response = self.client.patch(f"/api/tasks/{self.task.pk}/", {"project": other_project.pk})
+        self.assertEqual(response.status_code, 403)
+
+    def test_member_cannot_rename_organization(self):
+        self.client.force_authenticate(self.member)
+        response = self.client.patch(f"/api/organizations/{self.organization.pk}/", {"name": "Nope"})
+        self.assertEqual(response.status_code, 403)
+
+    def test_admin_cannot_change_or_remove_owner_membership(self):
+        admin = User.objects.create_user("admin", password="Str0ngPass!23")
+        Membership.objects.create(user=admin, organization=self.organization, role="ADMIN")
+        self.client.force_authenticate(admin)
+        owner_membership = Membership.objects.get(user=self.owner, organization=self.organization)
+        self.assertEqual(self.client.patch(f"/api/memberships/{owner_membership.pk}/", {"role": "VIEWER"}).status_code, 403)
+        self.assertEqual(self.client.delete(f"/api/memberships/{owner_membership.pk}/").status_code, 403)

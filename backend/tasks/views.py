@@ -26,6 +26,14 @@ class OrganizationViewSet(viewsets.ModelViewSet):
         organization = serializer.save()
         Membership.objects.create(organization=organization, user=self.request.user, role=Membership.Role.OWNER)
 
+    def perform_update(self, serializer):
+        require_role(self.request.user, serializer.instance, "OWNER", "ADMIN")
+        serializer.save()
+
+    def perform_destroy(self, instance):
+        require_role(self.request.user, instance, "OWNER")
+        instance.delete()
+
 
 class MembershipViewSet(viewsets.ModelViewSet):
     serializer_class = MembershipSerializer
@@ -39,10 +47,17 @@ class MembershipViewSet(viewsets.ModelViewSet):
 
     def perform_update(self, serializer):
         require_role(self.request.user, serializer.instance.organization, "OWNER", "ADMIN")
+        if serializer.instance.role == "OWNER" and membership(self.request.user, serializer.instance.organization).role != "OWNER":
+            raise exceptions.PermissionDenied()
         serializer.save()
 
     def perform_destroy(self, instance):
         require_role(self.request.user, instance.organization, "OWNER", "ADMIN")
+        actor = membership(self.request.user, instance.organization)
+        if instance.role == "OWNER" and actor.role != "OWNER":
+            raise exceptions.PermissionDenied()
+        if instance.role == "OWNER" and Membership.objects.filter(organization=instance.organization, role="OWNER").count() == 1:
+            raise exceptions.ValidationError("An organization must keep an owner.")
         instance.delete()
 
 
@@ -87,6 +102,8 @@ class TaskViewSet(viewsets.ModelViewSet):
         member = require_role(self.request.user, task.project.organization, "OWNER", "ADMIN", "MEMBER")
         if member.role == "MEMBER" and task.created_by_id != self.request.user.id:
             raise exceptions.PermissionDenied()
+        if serializer.validated_data.get("project", task.project) != task.project:
+            raise exceptions.PermissionDenied("Tasks cannot be moved between projects.")
         serializer.save()
 
     def perform_destroy(self, instance):
