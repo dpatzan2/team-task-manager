@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Membership, Organization, Project, Task
+from .models import Membership, Organization, Project, Task, TaskActivity
 
 
 def role_for(request, organization_id):
@@ -62,3 +62,11 @@ class TaskSerializer(serializers.ModelSerializer):
         if assignee and not Membership.objects.filter(organization=project.organization, user=assignee).exists():
             raise serializers.ValidationError({"assignee": "Assignee must belong to the organization."})
         return attrs
+
+
+class TaskActivitySerializer(serializers.ModelSerializer):
+    actor_name = serializers.CharField(source="actor.username", read_only=True)
+
+    class Meta:
+        model = TaskActivity
+        fields = ["id", "action", "actor_name", "created_at"]

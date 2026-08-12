@@ -6,7 +6,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from .models import Membership, Organization, Project, Task, TaskActivity
-from .serializers import MembershipSerializer, OrganizationSerializer, ProjectSerializer, TaskSerializer
+from .serializers import MembershipSerializer, OrganizationSerializer, ProjectSerializer, TaskActivitySerializer, TaskSerializer
 
 
 def membership(user, organization):
@@ -140,3 +140,26 @@ class TaskViewSet(viewsets.ModelViewSet):
         instance.deleted_at = timezone.now()
         instance.save(update_fields=["deleted_at"])
         TaskActivity.objects.create(task=instance, actor=self.request.user, action="DELETED")
+
+    @action(detail=True, methods=["get"])
+    def activity(self, request, pk=None):
+        task = self.get_object()
+        return Response(TaskActivitySerializer(task.activity.select_related("actor"), many=True).data)
+
+    @action(detail=False, methods=["get"])
+    def deleted(self, request):
+        tasks = Task.objects.filter(deleted_at__isnull=False, project__organization__memberships__user=request.user).select_related("project", "created_by", "assignee").distinct()
+        return Response(TaskSerializer(tasks, many=True, context={"request": request}).data)
+
+    @action(detail=True, methods=["post"])
+    def restore(self, request, pk=None):
+        task = Task.objects.filter(pk=pk, deleted_at__isnull=False, project__organization__memberships__user=request.user).first()
+        if not task:
+            raise exceptions.NotFound()
+        member = require_role(request.user, task.project.organization, "OWNER", "ADMIN", "MEMBER")
+        if member.role == "MEMBER" and task.created_by_id != request.user.id:
+            raise exceptions.PermissionDenied()
+        task.deleted_at = None
+        task.save(update_fields=["deleted_at"])
+        TaskActivity.objects.create(task=task, actor=request.user, action="RESTORED")
+        return Response(TaskSerializer(task, context={"request": request}).data)
