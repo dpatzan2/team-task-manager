@@ -149,7 +149,7 @@ button.secondary:hover { background: var(--accent-soft); }
 .resource-list li { border: 1px solid var(--border); border-radius: 10px; background: #fff; transition: border-color 150ms, box-shadow 150ms, transform 150ms; }
 .resource-list li:hover { border-color: #b6c7ef; box-shadow: 0 6px 16px rgba(31, 41, 51, .07); transform: translateY(-1px); }
 .resource-list a { display: flex; align-items: center; gap: 12px; padding: 14px; color: var(--text); text-decoration: none; }
-.resource-list a > span:nth-child(2) { flex: 1; min-width: 0; }
+.resource-list strong { flex: 1; min-width: 0; }
 .resource-icon { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 9px; color: #2748a8; background: var(--accent-soft); font-weight: 700; }
 .project-icon { color: #2f7d50; background: #edf8f0; }
 .empty-state { padding: 18px; text-align: center; border: 1px dashed var(--border); border-radius: 10px; }
