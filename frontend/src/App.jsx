@@ -3,7 +3,9 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { getToken } from "./api";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
-import Tasks from "./pages/Tasks";
+import Organizations from "./pages/Organizations";
+import Organization from "./pages/Organization";
+import Project from "./pages/Project";
 
 // ponytail: presence of a token is enough to route; a request with an expired
 // token still fails server-side and the API layer reports it.
@@ -21,10 +23,12 @@ export default function App() {
           path="/"
           element={
             <Protected>
-              <Tasks />
+              <Organizations />
             </Protected>
           }
         />
+        <Route path="/organizations/:id" element={<Protected><Organization /></Protected>} />
+        <Route path="/projects/:id" element={<Protected><Project /></Protected>} />
       </Routes>
     </BrowserRouter>
   );
