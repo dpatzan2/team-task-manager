@@ -39,7 +39,10 @@ class MembershipViewSet(viewsets.ModelViewSet):
     serializer_class = MembershipSerializer
 
     def get_queryset(self):
-        return Membership.objects.filter(organization__memberships__user=self.request.user).select_related("user", "organization").distinct()
+        queryset = Membership.objects.filter(organization__memberships__user=self.request.user).select_related("user", "organization").distinct()
+        if organization := self.request.query_params.get("organization"):
+            queryset = queryset.filter(organization_id=organization)
+        return queryset
 
     def perform_create(self, serializer):
         require_role(self.request.user, serializer.validated_data["organization"], "OWNER", "ADMIN")
