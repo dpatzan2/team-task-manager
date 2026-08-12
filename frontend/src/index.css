@@ -156,9 +156,10 @@ button.secondary:hover { background: var(--accent-soft); }
 .project-icon { color: #2f7d50; background: #edf8f0; }
 .empty-state { padding: 18px; text-align: center; border: 1px dashed var(--border); border-radius: 10px; }
 .member-list { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
-.member-list li { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px; border-bottom: 1px solid var(--border); }
+.member-list li { display: grid; gap: 8px; padding: 10px; border-bottom: 1px solid var(--border); }
 .member-list li:last-child { border-bottom: 0; }
-.member-actions { display: flex; gap: 6px; }
+.member-actions { display: flex; gap: 6px; min-width: 0; }
+.member-actions select { flex: 1; min-width: 0; }
 .member-actions select, .member-actions button { padding: 6px 8px; font-size: 13px; }
 
 .task-list li {
@@ -220,7 +221,7 @@ details { padding: 12px; border: 1px solid var(--border); border-radius: 10px; b
 summary { cursor: pointer; color: var(--accent); font-weight: 600; }
 details[open] summary { margin-bottom: 12px; }
 
-@media (max-width: 600px) {
+@media (max-width: 780px) {
   #root { padding: 16px 12px; }
   .row, .task-list li { align-items: stretch; flex-wrap: wrap; }
   .row > * { flex: 1 1 auto; }
