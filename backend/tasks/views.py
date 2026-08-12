@@ -1,5 +1,8 @@
+from django.contrib.auth import get_user_model
 from django.db.models import Q
 from rest_framework import exceptions, viewsets
+from rest_framework.decorators import action
+from rest_framework.response import Response
 
 from .models import Membership, Organization, Project, Task
 from .serializers import MembershipSerializer, OrganizationSerializer, ProjectSerializer, TaskSerializer
@@ -43,6 +46,14 @@ class MembershipViewSet(viewsets.ModelViewSet):
         if organization := self.request.query_params.get("organization"):
             queryset = queryset.filter(organization_id=organization)
         return queryset
+
+    @action(detail=False, methods=["get"], url_path="users")
+    def users(self, request):
+        query = request.query_params.get("q", "").strip()
+        if len(query) < 2:
+            return Response({"results": []})
+        users = get_user_model().objects.filter(username__icontains=query).values("id", "username")[:10]
+        return Response({"results": list(users)})
 
     def perform_create(self, serializer):
         require_role(self.request.user, serializer.validated_data["organization"], "OWNER", "ADMIN")

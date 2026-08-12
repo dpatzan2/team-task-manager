@@ -83,3 +83,9 @@ class CollaborativeAPITests(APITestCase):
         owner_membership = Membership.objects.get(user=self.owner, organization=self.organization)
         self.assertEqual(self.client.patch(f"/api/memberships/{owner_membership.pk}/", {"role": "VIEWER"}).status_code, 403)
         self.assertEqual(self.client.delete(f"/api/memberships/{owner_membership.pk}/").status_code, 403)
+
+    def test_member_search_returns_matching_users(self):
+        self.client.force_authenticate(self.owner)
+        response = self.client.get("/api/memberships/users/?q=outs")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["results"][0]["username"], "outsider")
