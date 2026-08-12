@@ -3,10 +3,20 @@ from rest_framework import serializers
 from .models import Membership, Organization, Project, Task
 
 
+def role_for(request, organization_id):
+    if not hasattr(request, "_organization_roles"):
+        request._organization_roles = dict(Membership.objects.filter(user=request.user).values_list("organization_id", "role"))
+    return request._organization_roles.get(organization_id)
+
+
 class OrganizationSerializer(serializers.ModelSerializer):
+    my_role = serializers.SerializerMethodField()
+
+    def get_my_role(self, organization):
+        return role_for(self.context["request"], organization.id)
     class Meta:
         model = Organization
-        fields = ["id", "name", "slug", "created_at"]
+        fields = ["id", "name", "slug", "created_at", "my_role"]
         read_only_fields = ["id", "created_at"]
 
 
@@ -23,9 +33,7 @@ class ProjectSerializer(serializers.ModelSerializer):
     my_role = serializers.SerializerMethodField()
 
     def get_my_role(self, project):
-        user = self.context["request"].user
-        membership = Membership.objects.filter(organization=project.organization, user=user).first()
-        return membership.role if membership else None
+        return role_for(self.context["request"], project.organization_id)
 
     class Meta:
         model = Project
@@ -39,9 +47,9 @@ class TaskSerializer(serializers.ModelSerializer):
     can_edit = serializers.SerializerMethodField()
 
     def get_can_edit(self, task):
-        user = self.context["request"].user
-        role = Membership.objects.filter(organization=task.project.organization, user=user).values_list("role", flat=True).first()
-        return role in ("OWNER", "ADMIN") or task.created_by_id == user.id
+        request = self.context["request"]
+        role = role_for(request, task.project.organization_id)
+        return role in ("OWNER", "ADMIN") or (role == "MEMBER" and task.created_by_id == request.user.id)
 
     class Meta:
         model = Task

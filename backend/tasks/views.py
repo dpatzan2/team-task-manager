@@ -1,5 +1,5 @@
 from django.contrib.auth import get_user_model
-from django.db.models import Q
+from django.db.models import Count, Q
 from rest_framework import exceptions, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -60,9 +60,13 @@ class MembershipViewSet(viewsets.ModelViewSet):
         serializer.save()
 
     def perform_update(self, serializer):
-        require_role(self.request.user, serializer.instance.organization, "OWNER", "ADMIN")
-        if serializer.instance.role == "OWNER" and membership(self.request.user, serializer.instance.organization).role != "OWNER":
+        actor = require_role(self.request.user, serializer.instance.organization, "OWNER", "ADMIN")
+        if serializer.validated_data.get("role") == "OWNER" and actor.role != "OWNER":
             raise exceptions.PermissionDenied()
+        if serializer.instance.role == "OWNER" and actor.role != "OWNER":
+            raise exceptions.PermissionDenied()
+        if serializer.instance.role == "OWNER" and serializer.validated_data.get("role") != "OWNER" and Membership.objects.filter(organization=serializer.instance.organization, role="OWNER").count() == 1:
+            raise exceptions.ValidationError("An organization must keep an owner.")
         serializer.save()
 
     def perform_destroy(self, instance):
@@ -93,6 +97,12 @@ class ProjectViewSet(viewsets.ModelViewSet):
         serializer.save()
 
     perform_destroy = lambda self, instance: (require_role(self.request.user, instance.organization, "OWNER", "ADMIN"), instance.delete())
+
+    @action(detail=True, methods=["get"])
+    def summary(self, request, pk=None):
+        project = self.get_object()
+        counts = dict(project.tasks.values_list("status").annotate(total=Count("id")))
+        return Response({"TODO": counts.get("TODO", 0), "IN_PROGRESS": counts.get("IN_PROGRESS", 0), "DONE": counts.get("DONE", 0)})
 
 
 class TaskViewSet(viewsets.ModelViewSet):
