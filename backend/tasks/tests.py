@@ -1,7 +1,21 @@
 from django.contrib.auth.models import User
 from rest_framework.test import APITestCase
 
-from .models import Task
+from .models import Membership, Organization, Project, Task
+
+
+class CollaborativeDomainTests(APITestCase):
+    def test_membership_is_unique_and_tasks_belong_to_projects(self):
+        user = User.objects.create_user("member", password="Str0ngPass!23")
+        organization = Organization.objects.create(name="Acme", slug="acme")
+        Membership.objects.create(user=user, organization=organization)
+        project = Project.objects.create(organization=organization, name="Website")
+        task = Task.objects.create(project=project, created_by=user, title="Ship")
+
+        self.assertEqual(task.project, project)
+        self.assertEqual(task.created_by, user)
+        with self.assertRaises(Exception):
+            Membership.objects.create(user=user, organization=organization)
 
 
 class TaskAPITests(APITestCase):
