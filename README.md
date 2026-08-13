@@ -58,12 +58,12 @@ User -> Organization -> Project -> Task
 
 `Membership` is the relationship between a user and an organization. It has a database uniqueness constraint on `(user, organization)`. A task belongs to a project, and a project belongs to an organization.
 
-| Role | Can do | Cannot do |
-| --- | --- | --- |
-| `OWNER` | Manage the organization, projects, members, and all tasks. | Remove or downgrade the last owner. |
-| `ADMIN` | Manage projects, non-owner memberships, and all tasks. | Promote someone to owner, change/remove an owner, or delete the organization. |
-| `MEMBER` | Read the organization and create/update/delete tasks they created. | Manage projects, memberships, or other users' tasks. |
-| `VIEWER` | Read organizations, projects, members, and tasks. | Create or change anything. |
+| Role       | Can do                                                             | Cannot do                                                                     |
+| ---------- | ------------------------------------------------------------------ | ----------------------------------------------------------------------------- |
+| `OWNER`  | Manage the organization, projects, members, and all tasks.         | Remove or downgrade the last owner.                                           |
+| `ADMIN`  | Manage projects, non-owner memberships, and all tasks.             | Promote someone to owner, change/remove an owner, or delete the organization. |
+| `MEMBER` | Read the organization and create/update/delete tasks they created. | Manage projects, memberships, or other users' tasks.                          |
+| `VIEWER` | Read organizations, projects, members, and tasks.                  | Create or change anything.                                                    |
 
 Authorization is enforced in the backend, not only hidden in the UI. Every organization, project, membership, and task queryset is scoped to the current user's memberships. A request for a resource in another organization returns `404`, which avoids exposing that it exists.
 
@@ -71,14 +71,14 @@ For reassignment, the task creator and organization `ADMIN`/`OWNER` can change t
 
 ## API overview
 
-| Area | Endpoints |
-| --- | --- |
-| Auth | `POST /api/auth/register/`, `login/`, `refresh/` |
-| Organizations | CRUD at `/api/organizations/` |
-| Members | CRUD at `/api/memberships/`, user search at `GET /api/memberships/users/?q=name` |
-| Projects | CRUD at `/api/projects/`, summary at `GET /api/projects/<id>/summary/` |
-| Tasks | CRUD at `/api/tasks/`, activity at `GET /api/tasks/<id>/activity/` |
-| Trash | `GET /api/tasks/deleted/`, `POST /api/tasks/<id>/restore/` |
+| Area          | Endpoints                                                                           |
+| ------------- | ----------------------------------------------------------------------------------- |
+| Auth          | `POST /api/auth/register/`, `login/`, `refresh/`                              |
+| Organizations | CRUD at`/api/organizations/`                                                      |
+| Members       | CRUD at`/api/memberships/`, user search at `GET /api/memberships/users/?q=name` |
+| Projects      | CRUD at`/api/projects/`, summary at `GET /api/projects/<id>/summary/`           |
+| Tasks         | CRUD at`/api/tasks/`, activity at `GET /api/tasks/<id>/activity/`               |
+| Trash         | `GET /api/tasks/deleted/`, `POST /api/tasks/<id>/restore/`                      |
 
 Task filters can be combined:
 
