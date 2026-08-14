@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
-import { api, setToken } from "../api";
+import { api } from "../api";
 
 export default function Register() {
   const navigate = useNavigate();
@@ -21,11 +21,10 @@ export default function Register() {
         body: { username, email, password },
       });
       // Registration does not return tokens, so log in right after it.
-      const { access, refresh } = await api("/auth/login/", {
+      await api("/auth/login/", {
         method: "POST",
         body: { username, password },
       });
-      setToken(access, refresh);
       navigate("/");
     } catch (err) {
       setError(err.message);

@@ -1,16 +1,18 @@
+import { useEffect, useState } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 
-import { getToken } from "./api";
+import { api } from "./api";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Organizations from "./pages/Organizations";
 import Organization from "./pages/Organization";
 import Project from "./pages/Project";
 
-// ponytail: presence of a token is enough to route; a request with an expired
-// token still fails server-side and the API layer reports it.
 function Protected({ children }) {
-  return getToken() ? children : <Navigate to="/login" replace />;
+  const [authenticated, setAuthenticated] = useState(null);
+  useEffect(() => { api("/auth/session/").then(() => setAuthenticated(true)).catch(() => setAuthenticated(false)); }, []);
+  if (authenticated === null) return null;
+  return authenticated ? children : <Navigate to="/login" replace />;
 }
 
 export default function App() {

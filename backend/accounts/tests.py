@@ -29,12 +29,18 @@ class AuthAPITests(APITestCase):
         response = self.client.post("/api/auth/register/", self.credentials)
         self.assertEqual(response.status_code, 400)
 
-    def test_login_returns_tokens(self):
+    def test_login_sets_http_only_cookies_and_authenticates_requests(self):
         User.objects.create_user(**self.credentials)
         response = self.client.post("/api/auth/login/", self.credentials)
         self.assertEqual(response.status_code, 200)
-        self.assertIn("access", response.data)
-        self.assertIn("refresh", response.data)
+        self.assertIn("access", response.cookies)
+        self.assertIn("refresh", response.cookies)
+        self.assertTrue(response.cookies["access"]["httponly"])
+        self.assertTrue(response.cookies["refresh"]["httponly"])
+        self.assertNotIn("access", response.data)
+        self.assertNotIn("refresh", response.data)
+        self.client.cookies["access"] = response.cookies["access"].value
+        self.assertEqual(self.client.get("/api/organizations/").status_code, 200)
 
     def test_login_rejects_wrong_password(self):
         User.objects.create_user(**self.credentials)

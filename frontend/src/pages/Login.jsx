@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
-import { api, setToken } from "../api";
+import { api } from "../api";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -15,11 +15,10 @@ export default function Login() {
     setError("");
     setLoading(true);
     try {
-      const { access, refresh } = await api("/auth/login/", {
+      await api("/auth/login/", {
         method: "POST",
         body: { username, password },
       });
-      setToken(access, refresh);
       navigate("/");
     } catch (err) {
       setError(err.message);
