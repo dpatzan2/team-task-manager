@@ -73,7 +73,7 @@ For reassignment, the task creator and organization `ADMIN`/`OWNER` can change t
 
 | Area          | Endpoints                                                                           |
 | ------------- | ----------------------------------------------------------------------------------- |
-| Auth          | `POST /api/auth/register/`, `login/`, `refresh/`                              |
+| Auth          | `POST /api/auth/register/`, `login/`, `refresh/`, `logout/`; `GET /api/auth/session/` |
 | Organizations | CRUD at`/api/organizations/`                                                      |
 | Members       | CRUD at`/api/memberships/`, user search at `GET /api/memberships/users/?q=name` |
 | Projects      | CRUD at`/api/projects/`, summary at `GET /api/projects/<id>/summary/`           |
@@ -103,9 +103,9 @@ The UI has protected routes, loading/error/empty states, client-side required fi
 
 ### JWT authentication
 
-SimpleJWT provides an access/refresh pair. The client sends the access token as a Bearer token and retries one failed authenticated request after using the refresh token. Registration and login are throttled to 10 requests per minute.
+SimpleJWT provides an access/refresh pair stored in `HttpOnly` cookies. The browser sends the cookies on same-origin API requests, so the React code never reads or stores credentials in `localStorage`. When an access token expires, the client calls the refresh endpoint, which reads the refresh cookie and issues a new access cookie before retrying the original request.
 
-For this exercise, both tokens are stored in `localStorage` because it keeps the client simple and survives reloads. The trade-off is XSS exposure. In production I would use an httpOnly refresh cookie, keep the access token in memory, and add CSRF protection.
+Login creates both cookies and logout deletes them. They are `HttpOnly` and `SameSite=Strict`; the `Secure` flag is enabled outside Django development mode. This reduces token exposure to XSS. The current frontend and backend are served as one origin through the Vite proxy; if they are deployed on separate origins, CSRF protection and the cookie/CORS configuration should be reviewed together. Registration and login are throttled to 10 requests per minute.
 
 ### ViewSets and permission strategy
 
@@ -133,8 +133,8 @@ This is intentionally a basic audit trail. It records the action and actor, not 
 
 ## Trade-offs and next steps
 
-1. Move refresh tokens to httpOnly cookies and add CSRF protection.
-2. Add frontend tests for role-specific behavior, edits, and token refresh.
+1. Add frontend tests for role-specific behavior, edits, and cookie-based token refresh.
+2. Add CSRF protection if the frontend and API are deployed on separate origins.
 3. Use PostgreSQL, add production indexes, and add basic monitoring before scaling the task list.
 4. Extend the activity log with field-level diffs and retention rules if audit requirements become stricter.
 
