@@ -4,6 +4,10 @@ const REFRESH_KEY = "refresh";
 export const getToken = () => localStorage.getItem(TOKEN_KEY);
 export const setToken = (token, refresh) => { localStorage.setItem(TOKEN_KEY, token); if (refresh) localStorage.setItem(REFRESH_KEY, refresh); };
 export const clearToken = () => { localStorage.removeItem(TOKEN_KEY); localStorage.removeItem(REFRESH_KEY); };
+export const localApiPath = (url) => {
+  const { pathname, search } = new URL(url, "http://local");
+  return `${pathname.replace(/^\/api/, "")}${search}`;
+};
 
 /** Turns a DRF error body into a single readable message. */
 async function errorMessage(response) {
